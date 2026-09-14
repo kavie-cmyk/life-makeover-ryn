@@ -192,7 +192,7 @@
           <div class="notes-grid">
             <div><strong>1. Một món / một slot</strong><p>Mỗi loại fashion chọn item có điểm thuộc tính cao nhất.</p></div>
             <div><strong>2. Dress vs Top + Bottom</strong><p>App so sánh Dress với tổng Top + Bottom rồi chọn phương án cao hơn.</p></div>
-            <div><strong>3. Wiki stat + Dye</strong><p>Item từ Wiki dùng rating + scale để tạo Wiki index. Trang Wiki legacy chỉ có thứ tự style sẽ dùng fallback index có dấu ~ và được ghi rõ là ước tính. Charm 8/16 được cộng bonus riêng theo món.</p></div>
+            <div><strong>3. Wiki stat + Dye</strong><p>Item từ Wiki dùng rating + scale để tạo Wiki index. Trang Wiki cũ/thiếu stat chỉ được cảnh báo; app không tự bịa điểm. Charm 8/16 được cộng bonus riêng theo món.</p></div>
             <div><strong>4. Candidate simulation</strong><p>Item “Mục tiêu” không tính vào set hiện tại; app chỉ giả lập để đo phần gain.</p></div>
           </div>
         </article>
@@ -254,5 +254,6 @@
   <script src="wiki-legacy-fallback.js?v=20260915-0032"></script>
   <script src="detail-hooks.js?v=20260914-2345"></script>
   <script src="upgrade-recommend.js?v=20260914-2356"></script>
+  <script src="duplicate-guard.js?v=20260915-0040"></script>
 </body>
 </html>
