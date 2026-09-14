@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       refresh_catalog:
-        description: "Rebuild farmable Wiki catalog before deploy"
+        description: "Rebuild farmable + multi-source master catalogs before deploy"
         required: false
         default: false
         type: boolean
@@ -38,37 +38,54 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Reuse latest farmable catalog for fast deploys
+      - name: Reuse latest catalogs for fast deploys
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.refresh_catalog != true)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p data .catalog-cache
+          mkdir -p data .catalog-cache/extracted
           ARTIFACT_ID="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=github-pages&per_page=20" --jq '.artifacts | map(select(.expired == false)) | sort_by(.created_at) | reverse | .[0].id // empty')"
           if [ -n "$ARTIFACT_ID" ]; then
-            echo "Reusing catalog from Pages artifact $ARTIFACT_ID"
+            echo "Reusing catalogs from Pages artifact $ARTIFACT_ID"
             gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > .catalog-cache/pages.zip
             unzip -p .catalog-cache/pages.zip artifact.tar > .catalog-cache/artifact.tar
-            mkdir -p .catalog-cache/extracted
-            tar -xf .catalog-cache/artifact.tar -C .catalog-cache/extracted ./data/farmable-catalog.json || true
-            if [ -s .catalog-cache/extracted/data/farmable-catalog.json ]; then
-              cp .catalog-cache/extracted/data/farmable-catalog.json data/farmable-catalog.json
-            fi
+            tar -xf .catalog-cache/artifact.tar -C .catalog-cache/extracted ./data/farmable-catalog.json ./data/master-catalog.json 2>/dev/null || true
+            for file in farmable-catalog.json master-catalog.json; do
+              if [ -s ".catalog-cache/extracted/data/$file" ]; then
+                cp ".catalog-cache/extracted/data/$file" "data/$file"
+              fi
+            done
           fi
 
-      - name: Build fresh farmable Wiki catalog when needed
+      - name: Refresh farmable Wiki catalog when needed
         shell: bash
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.refresh_catalog || false }}" = "true" ] || [ ! -s data/farmable-catalog.json ]; then
-            echo "Building fresh catalog"
+            echo "Building fresh farmable catalog"
             node scripts/build-farmable-catalog-safe.mjs
           else
             node <<'NODE'
           const x = require('./data/farmable-catalog.json');
-          console.log(`Using cached catalog: ${x.count || x.items?.length || 0} items · ${x.generatedAt || 'unknown time'}`);
+          console.log(`Using cached farmable catalog: ${x.count || x.items?.length || 0} items · ${x.generatedAt || 'unknown time'}`);
+          NODE
+          fi
+
+      - name: Refresh multi-source master catalog when needed
+        shell: bash
+        env:
+          RYN_WIKI_LATEST_LIMIT: "1200"
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.refresh_catalog || false }}" = "true" ] || [ ! -s data/master-catalog.json ]; then
+            echo "Building fresh master catalog from wiki.gg + Official Global + BWIKI"
+            node scripts/build-master-catalog.mjs
+          else
+            node <<'NODE'
+          const x = require('./data/master-catalog.json');
+          console.log(`Using cached master catalog: ${x.count || x.records?.length || 0} exact + ${x.provisionalCount || x.provisional?.length || 0} provisional · ${x.generatedAt || 'unknown time'}`);
           NODE
           fi
 
@@ -79,13 +96,34 @@ jobs:
           const fs = require('fs');
           let html = fs.readFileSync('index.html', 'utf8');
           const version = process.env.GITHUB_SHA?.slice(0, 12) || Date.now();
-          html = html.replace(/current-global-catalog\.js\?v=[^\"']+/g, `current-global-catalog.js?v=${version}`);
+
+          if (!html.includes('auto-catalog.js')) {
+            const current = /(<script src="current-global-catalog\.js[^>]*><\/script>)/;
+            if (current.test(html)) html = html.replace(current, `$1\n  <script src="auto-catalog.js?v=${version}"></script>`);
+            else html = html.replace('</body>', `  <script src="auto-catalog.js?v=${version}"></script>\n</body>`);
+          }
           if (!html.includes('farm-scan.js')) {
             html = html.replace('</body>', `  <script src="farm-scan.js?v=${version}"></script>\n</body>`);
           }
+
+          html = html
+            .replace(/current-global-catalog\.js\?v=[^"']+/g, `current-global-catalog.js?v=${version}`)
+            .replace(/auto-catalog\.js\?v=[^"']+/g, `auto-catalog.js?v=${version}`)
+            .replace(/farm-scan\.js\?v=[^"']+/g, `farm-scan.js?v=${version}`);
           fs.writeFileSync('index.html', html);
-          if (!fs.existsSync('data/farmable-catalog.json')) process.exit(2);
+
+          for (const file of ['data/farmable-catalog.json','data/master-catalog.json','auto-catalog.js']) {
+            if (!fs.existsSync(file)) {
+              console.error(`Missing deploy file: ${file}`);
+              process.exit(2);
+            }
+          }
           NODE
+
+      - name: Validate generated catalogs
+        run: |
+          node -e "const x=require('./data/master-catalog.json'); if(!Array.isArray(x.records)||!Array.isArray(x.provisional)) process.exit(2); console.log('master',x.records.length,'exact',x.provisional.length,'provisional')"
+          node -e "const x=require('./data/farmable-catalog.json'); if(!Array.isArray(x.items)) process.exit(2); console.log('farmable',x.items.length)"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
