@@ -20,6 +20,7 @@ jobs:
           node --check detail-hooks.js
           node --check upgrade-recommend.js
           node --check farm-scan.js
+          node --check duplicate-guard.js
           node --check scripts/build-farmable-catalog.mjs
           node --check scripts/build-farmable-catalog-safe.mjs
       - name: Verify required files
@@ -32,5 +33,6 @@ jobs:
           test -f detail-hooks.js
           test -f upgrade-recommend.js
           test -f farm-scan.js
+          test -f duplicate-guard.js
           test -f scripts/build-farmable-catalog.mjs
           test -f scripts/build-farmable-catalog-safe.mjs
