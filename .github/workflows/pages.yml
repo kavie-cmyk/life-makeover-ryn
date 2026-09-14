@@ -30,7 +30,7 @@ jobs:
           node-version: "20"
 
       - name: Build farmable Wiki catalog
-        run: node scripts/build-farmable-catalog.mjs
+        run: node scripts/build-farmable-catalog-safe.mjs
 
       - name: Prepare deployed HTML
         shell: bash
