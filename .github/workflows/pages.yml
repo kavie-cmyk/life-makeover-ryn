@@ -78,11 +78,12 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           let html = fs.readFileSync('index.html', 'utf8');
+          const version = process.env.GITHUB_SHA?.slice(0, 12) || Date.now();
+          html = html.replace(/current-global-catalog\.js\?v=[^\"']+/g, `current-global-catalog.js?v=${version}`);
           if (!html.includes('farm-scan.js')) {
-            const version = process.env.GITHUB_SHA?.slice(0, 12) || Date.now();
             html = html.replace('</body>', `  <script src="farm-scan.js?v=${version}"></script>\n</body>`);
-            fs.writeFileSync('index.html', html);
           }
+          fs.writeFileSync('index.html', html);
           if (!fs.existsSync('data/farmable-catalog.json')) process.exit(2);
           NODE
 
