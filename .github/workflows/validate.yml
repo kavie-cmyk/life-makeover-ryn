@@ -16,9 +16,11 @@ jobs:
         run: |
           node --check app.js
           node --check catalog.js
+          node --check detail-hooks.js
       - name: Verify required files
         run: |
           test -f index.html
           test -f styles.css
           test -f app.js
           test -f catalog.js
+          test -f detail-hooks.js
