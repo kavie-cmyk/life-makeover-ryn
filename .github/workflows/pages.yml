@@ -66,7 +66,10 @@ jobs:
             echo "Building fresh catalog"
             node scripts/build-farmable-catalog-safe.mjs
           else
-            echo "Using cached catalog: $(node -e \"const x=require('./data/farmable-catalog.json'); console.log((x.count||x.items?.length||0)+' items · '+(x.generatedAt||'unknown time'))\")"
+            node <<'NODE'
+          const x = require('./data/farmable-catalog.json');
+          console.log(`Using cached catalog: ${x.count || x.items?.length || 0} items · ${x.generatedAt || 'unknown time'}`);
+          NODE
           fi
 
       - name: Prepare deployed HTML
