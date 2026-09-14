@@ -4,7 +4,9 @@ const TYPES = [
   "Earrings","Necklace","Bracelet","Gloves","Ring","Handheld","Wings","Tail","Bag","Anklet",
   "Crossbody","Floating","Tattoo","Motor"
 ];
+const ACCESSORY_TYPES = ["Hat","Hair Accessory","Face Accessory","Earrings","Necklace","Bracelet","Gloves","Ring","Handheld","Wings","Tail","Bag","Anklet","Crossbody","Floating","Tattoo","Motor"];
 const STORAGE_KEY = "rynWardrobeLab.v1";
+const MODE_KEY = "rynWardrobeLab.scoreMode";
 const STYLE_ACCENTS = {
   Cool:"#6787d8", Elegant:"#9a6fc2", Fresh:"#65a995", Gorgeous:"#d09b50", Lively:"#e57c79",
   Pure:"#70a7cf", Sexy:"#c75f86", Simple:"#7c8d9e", Sweet:"#d983ad", Warm:"#d58c61"
@@ -14,6 +16,7 @@ let items = loadItems();
 let currentView = "dashboard";
 let activeOptimizerStyle = "Cool";
 let activeTargetStyle = "Cool";
+let activeScoreMode = localStorage.getItem(MODE_KEY) === "all" ? "all" : "eq";
 
 const $ = (id) => document.getElementById(id);
 const qsa = (sel) => [...document.querySelectorAll(sel)];
@@ -52,8 +55,9 @@ function saveItems() {
 function getScore(item, style) { return Number(item?.scores?.[style] || 0); }
 function ownedItems(source = items) { return source.filter(i => i.status === "owned"); }
 function targetItems(source = items) { return source.filter(i => i.status === "target"); }
+function isAccessory(itemOrType) { return ACCESSORY_TYPES.includes(typeof itemOrType === "string" ? itemOrType : itemOrType?.type); }
 
-function bestOutfit(style, source = items) {
+function bestOutfit(style, source = items, mode = activeScoreMode) {
   const owned = ownedItems(source);
   const bestByType = new Map();
   owned.forEach(item => {
@@ -65,7 +69,7 @@ function bestOutfit(style, source = items) {
   });
 
   const selected = [];
-  TYPES.filter(t => !["Dress","Top","Bottom"].includes(t)).forEach(type => {
+  TYPES.filter(t => !["Dress","Top","Bottom", ...ACCESSORY_TYPES].includes(t)).forEach(type => {
     const item = bestByType.get(type);
     if (item && getScore(item, style) > 0) selected.push(item);
   });
@@ -87,11 +91,19 @@ function bestOutfit(style, source = items) {
     }
   }
 
+  const accessories = ACCESSORY_TYPES
+    .map(type => bestByType.get(type))
+    .filter(item => item && getScore(item, style) > 0)
+    .sort((a,b) => getScore(b, style) - getScore(a, style) || b.rarity - a.rarity);
+  const countedAccessories = mode === "eq" ? accessories.slice(0, 5) : accessories;
+  selected.push(...countedAccessories);
+
   selected.sort((a,b) => TYPES.indexOf(a.type) - TYPES.indexOf(b.type));
   const total = selected.reduce((sum, item) => sum + getScore(item, style), 0);
   const rarity = {6:0,5:0,4:0,3:0};
   selected.forEach(item => rarity[item.rarity] = (rarity[item.rarity] || 0) + 1);
-  return { style, selected, total, rarity, coreMode };
+  const accessoryCutoff = countedAccessories.length ? getScore(countedAccessories[countedAccessories.length - 1], style) : 0;
+  return { style, selected, total, rarity, coreMode, mode, countedAccessories, accessoryCutoff, availableAccessories: accessories.length };
 }
 
 function simulateCandidate(candidate, style) {
@@ -112,10 +124,16 @@ function candidateRanking(style) {
 function fallbackWeakSlots(style) {
   const outfit = bestOutfit(style);
   if (!outfit.selected.length) return [];
-  return [...outfit.selected]
-    .sort((a,b) => a.rarity - b.rarity || getScore(a,style) - getScore(b,style))
-    .slice(0,5)
-    .map(item => ({ item, threshold:getScore(item,style), reason:item.rarity < 6 ? `${item.rarity}★ trong best set` : "Điểm thấp trong nhóm 6★ hiện tại" }));
+  const clothing = outfit.selected.filter(i => !isAccessory(i)).sort((a,b) => a.rarity - b.rarity || getScore(a,style) - getScore(b,style));
+  const accessories = outfit.selected.filter(i => isAccessory(i)).sort((a,b) => getScore(a,style) - getScore(b,style));
+  const results = [];
+  if (activeScoreMode === "eq" && accessories.length) {
+    const cutoff = accessories[0];
+    results.push({item:cutoff, threshold:getScore(cutoff,style), reason:"Mốc vào top 5 accessory"});
+  }
+  clothing.slice(0,4).forEach(item => results.push({item, threshold:getScore(item,style), reason:item.rarity < 6 ? `${item.rarity}★ trong best set` : "Điểm hiện tại của slot"}));
+  if (activeScoreMode === "all") accessories.slice(0,4).forEach(item => results.push({item, threshold:getScore(item,style), reason:"Accessory đang được tính điểm"}));
+  return results.slice(0,5);
 }
 
 function bestStyleSummary() {
@@ -138,7 +156,7 @@ function renderSidebar() {
 function renderDashboard() {
   const best = bestStyleSummary();
   $("heroBestScore").textContent = fmt(best.total);
-  $("heroBestStyle").textContent = best.total ? `${best.style} · ${best.selected.length} món` : "Chưa có dữ liệu";
+  $("heroBestStyle").textContent = best.total ? `${best.style} · ${best.selected.length} món · ${activeScoreMode === "eq" ? "Top 5 accessory" : "All slots"}` : "Chưa có dữ liệu";
 
   $("styleGrid").innerHTML = STYLES.map(style => {
     const out = bestOutfit(style);
@@ -165,7 +183,7 @@ function renderDashboard() {
     const style = best.total ? best.style : "Cool";
     const weak = fallbackWeakSlots(style).slice(0,3);
     $("upgradePreview").innerHTML = weak.length ? weak.map((w,idx) => `<div class="upgrade-row">
-      <div class="rank-badge">#${idx+1}</div><div><strong>${esc(w.item.type)} · cần vượt ${fmt(w.threshold)}</strong><span>${style} · hiện tại ${esc(w.item.name)} (${w.item.rarity}★)</span></div>
+      <div class="rank-badge">#${idx+1}</div><div><strong>${esc(w.item.type)} · cần vượt ${fmt(w.threshold)}</strong><span>${style} · hiện tại ${esc(w.item.name)} (${w.item.rarity}★) · ${esc(w.reason)}</span></div>
       <div class="gain">Săn</div></div>`).join("") : `<div class="empty-state">Thêm item để bắt đầu phân tích.</div>`;
   }
 
@@ -178,15 +196,16 @@ function renderDashboard() {
 function renderOptimizer() {
   if (!$("optimizerStyle").options.length) $("optimizerStyle").innerHTML = STYLES.map(s => `<option>${s}</option>`).join("");
   $("optimizerStyle").value = activeOptimizerStyle;
+  if ($("optimizerMode")) $("optimizerMode").value = activeScoreMode;
   const out = bestOutfit(activeOptimizerStyle);
   $("outfitTitle").textContent = `${activeOptimizerStyle} best set`;
   $("optimizerSummary").innerHTML = [
-    ["Tổng điểm",fmt(out.total)], ["Số món",out.selected.length], ["6★ / 5★",`${out.rarity[6]} / ${out.rarity[5]}`], ["Body",out.coreMode === "dress" ? "Dress" : out.coreMode === "separates" ? "Top + Bottom" : "—"]
+    ["Tổng điểm",fmt(out.total)], ["Số món tính điểm",out.selected.length], ["6★ / 5★",`${out.rarity[6]} / ${out.rarity[5]}`], ["Accessory",activeScoreMode === "eq" ? `${out.countedAccessories.length}/5` : `${out.countedAccessories.length}`]
   ].map(([label,val]) => `<div class="metric-card"><span>${label}</span><strong>${val}</strong></div>`).join("");
 
   $("outfitList").innerHTML = out.selected.length ? out.selected.map(item => `<div class="outfit-item">
     <div class="item-thumb">${item.image ? `<img src="${esc(item.image)}" alt="">` : esc(item.type.slice(0,2).toUpperCase())}</div>
-    <div><strong>${esc(item.name)}</strong><span>${esc(item.type)} · ${item.rarity}★${item.set ? ` · ${esc(item.set)}` : ""}</span></div>
+    <div><strong>${esc(item.name)}</strong><span>${esc(item.type)} · ${item.rarity}★${item.set ? ` · ${esc(item.set)}` : ""}${isAccessory(item) && activeScoreMode === "eq" ? " · top 5 acc" : ""}</span></div>
     <div class="item-score">${fmt(getScore(item,activeOptimizerStyle))}</div></div>`).join("") : `<div class="empty-state">Chưa có món sở hữu nào có điểm ${activeOptimizerStyle}.</div>`;
 
   const ranking = candidateRanking(activeOptimizerStyle).filter(x => x.gain > 0);
@@ -196,8 +215,11 @@ function renderOptimizer() {
     const top = ranking[0];
     html += `<div class="insight-card good"><strong>Candidate tốt nhất: ${esc(top.candidate.name)}</strong><p>+${fmt(top.gain)} điểm. ${replacementText(top)}</p></div>`;
   }
+  if (activeScoreMode === "eq" && out.countedAccessories.length === 5) {
+    html += `<div class="insight-card"><strong>Accessory cutoff: ${fmt(out.accessoryCutoff)}</strong><p>Accessory mới phải vượt mốc này ở ${activeOptimizerStyle} mới có khả năng chen vào top 5 đang được tính điểm.</p></div>`;
+  }
   weak.slice(0,4).forEach(w => {
-    html += `<div class="insight-card warn"><strong>${esc(w.item.type)} · ${w.item.rarity}★</strong><p>${esc(w.item.name)} đang đóng góp ${fmt(w.threshold)} điểm. Tìm món ${activeOptimizerStyle} vượt mức này để mở cơ hội tăng tổng điểm.</p></div>`;
+    html += `<div class="insight-card warn"><strong>${esc(w.item.type)} · ${w.item.rarity}★</strong><p>${esc(w.item.name)} đang đóng góp ${fmt(w.threshold)} điểm. ${esc(w.reason)}.</p></div>`;
   });
   $("optimizerInsights").innerHTML = html || `<div class="empty-state">Chưa đủ dữ liệu để phân tích khoảng trống.</div>`;
 }
@@ -243,6 +265,7 @@ function renderInventory() {
 function renderTargets() {
   if (!$("targetStyle").options.length) $("targetStyle").innerHTML = STYLES.map(s => `<option>${s}</option>`).join("");
   $("targetStyle").value = activeTargetStyle;
+  if ($("targetMode")) $("targetMode").value = activeScoreMode;
   const ranking = candidateRanking(activeTargetStyle);
   const positive = ranking.filter(x => x.gain > 0);
   if (positive.length) {
@@ -271,6 +294,24 @@ function goTo(view) {
 function setupModal() {
   $("itemType").innerHTML = TYPES.map(t => `<option>${t}</option>`).join("");
   $("scoreInputs").innerHTML = STYLES.map(style => `<div class="score-input"><label for="score-${style}">${style}</label><input id="score-${style}" type="number" min="0" step="1" inputmode="numeric" value="0"></div>`).join("");
+}
+
+function setupScoringControls() {
+  const optionHtml = `<option value="eq">Endorsement / Fashion Battle</option><option value="all">All slots / Story</option>`;
+  const optimizerWrap = $("optimizerStyle")?.closest("label");
+  const targetWrap = $("targetStyle")?.closest("label");
+  if (optimizerWrap && !$("optimizerMode")) optimizerWrap.insertAdjacentHTML("afterend", `<label class="select-wrap">Chế độ tính<select id="optimizerMode">${optionHtml}</select></label>`);
+  if (targetWrap && !$("targetMode")) targetWrap.insertAdjacentHTML("afterend", `<label class="select-wrap">Chế độ tính<select id="targetMode">${optionHtml}</select></label>`);
+  if ($("optimizerMode")) $("optimizerMode").value = activeScoreMode;
+  if ($("targetMode")) $("targetMode").value = activeScoreMode;
+}
+
+function setScoreMode(mode) {
+  activeScoreMode = mode === "all" ? "all" : "eq";
+  localStorage.setItem(MODE_KEY, activeScoreMode);
+  if ($("optimizerMode")) $("optimizerMode").value = activeScoreMode;
+  if ($("targetMode")) $("targetMode").value = activeScoreMode;
+  renderAll();
 }
 
 function openItemModal(id = null) {
@@ -317,7 +358,7 @@ function deleteCurrentItem() {
 }
 
 function exportJson() {
-  const payload = {version:1, exportedAt:new Date().toISOString(), items};
+  const payload = {version:1, exportedAt:new Date().toISOString(), scoreMode:activeScoreMode, items};
   downloadBlob(`ryn-wardrobe-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload,null,2), "application/json");
 }
 
@@ -326,7 +367,10 @@ async function importJson(file) {
     const parsed = JSON.parse(await file.text());
     const incoming = Array.isArray(parsed) ? parsed : parsed.items;
     if (!Array.isArray(incoming)) throw new Error("File không có mảng items");
-    items = incoming.map(normalizeItem); saveItems(); toast(`Đã nhập ${items.length} món từ JSON`);
+    items = incoming.map(normalizeItem);
+    if (parsed?.scoreMode) activeScoreMode = parsed.scoreMode === "all" ? "all" : "eq";
+    localStorage.setItem(MODE_KEY, activeScoreMode);
+    saveItems(); toast(`Đã nhập ${items.length} món từ JSON`);
   } catch (err) { alert(`Không thể nhập JSON: ${err.message}`); }
 }
 
@@ -383,6 +427,8 @@ function bindEvents() {
   $("itemForm").addEventListener("submit", handleItemSubmit); $("deleteItemBtn").addEventListener("click", deleteCurrentItem);
   $("optimizerStyle").addEventListener("change", e => { activeOptimizerStyle=e.target.value;renderOptimizer(); });
   $("targetStyle").addEventListener("change", e => { activeTargetStyle=e.target.value;renderTargets(); });
+  $("optimizerMode")?.addEventListener("change", e => setScoreMode(e.target.value));
+  $("targetMode")?.addEventListener("change", e => setScoreMode(e.target.value));
   ["inventorySearch","inventoryStatusFilter","inventoryRarityFilter"].forEach(id => $(id).addEventListener(id==="inventorySearch"?"input":"change",renderInventory));
   $("exportJsonBtn").addEventListener("click", exportJson); $("csvTemplateBtn").addEventListener("click", exportCsvTemplate);
   $("importJsonInput").addEventListener("change", e => { if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=""; });
@@ -392,5 +438,6 @@ function bindEvents() {
 }
 
 setupModal();
+setupScoringControls();
 bindEvents();
 renderAll();
