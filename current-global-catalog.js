@@ -20,6 +20,22 @@
         Elegant:{rating:"S"},
         Fresh:{rating:"A"}
       }
+    },
+    {
+      name:"Starlit Reverie",
+      type:"Hairstyle",
+      rarity:5,
+      set:"Moonlit Isle",
+      source:"Fashion Code · Moonlit Isle · Sep 9–Oct 20, 2026",
+      sourceUrl:"https://steamcommunity.com/app/2626940",
+      evidence:"In-game screenshot + official Global Fashion Code",
+      stats:{
+        Pure:{rating:"SS"},
+        Sweet:{rating:"S"},
+        Elegant:{rating:"A"},
+        Gorgeous:{rating:"A"},
+        Fresh:{rating:"B"}
+      }
     }
   ];
 
@@ -60,7 +76,7 @@
     if (!record) { box.hidden = true; box.innerHTML = ""; return; }
     const pills = Object.entries(record.stats || {}).map(([style,stat]) => `<span class="global-catalog-stat"><b>${style}</b> ${stat.rating} · index ${scoreFor(stat)}</span>`).join("");
     box.hidden = false;
-    box.innerHTML = `<div class="global-catalog-top"><div><strong>${record.name}</strong><div class="global-catalog-meta">${record.type} · ${record.rarity}★ · ${record.set}<br>${record.source}</div></div><span class="global-catalog-badge">CURRENT GLOBAL</span></div><div class="global-catalog-stats">${pills}</div><div class="global-catalog-note">Wiki.gg chưa có scale cho record này. App tạm dùng <b>rating-tier index</b> (SSS 60 · S 40 · A 30) để không bỏ trống item; đây không phải raw battle point. Dye/Charm của tài khoản vẫn nhập riêng.</div><a href="${record.sourceUrl}" target="_blank" rel="noopener">Nguồn event Global ↗</a>`;
+    box.innerHTML = `<div class="global-catalog-top"><div><strong>${record.name}</strong><div class="global-catalog-meta">${record.type} · ${record.rarity}★ · ${record.set}<br>${record.source}</div></div><span class="global-catalog-badge">CURRENT GLOBAL</span></div><div class="global-catalog-stats">${pills}</div><div class="global-catalog-note">Wiki.gg chưa có scale cho record này. App tạm dùng <b>rating-tier index</b> (SSS 60 · SS 50 · S 40 · A 30 · B 20) để không bỏ trống item; đây không phải raw battle point. Dye/Charm của tài khoản vẫn nhập riêng.</div><a href="${record.sourceUrl}" target="_blank" rel="noopener">Nguồn event Global ↗</a>`;
   }
 
   function applyRecord(record) {
