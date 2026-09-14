@@ -17,6 +17,7 @@ jobs:
           node --check app.js
           node --check catalog.js
           node --check current-global-catalog.js
+          node --check auto-catalog.js
           node --check wiki-legacy-fallback.js
           node --check detail-hooks.js
           node --check upgrade-recommend.js
@@ -24,6 +25,7 @@ jobs:
           node --check duplicate-guard.js
           node --check scripts/build-farmable-catalog.mjs
           node --check scripts/build-farmable-catalog-safe.mjs
+          node --check scripts/build-master-catalog.mjs
       - name: Verify required files
         run: |
           test -f index.html
@@ -31,6 +33,7 @@ jobs:
           test -f app.js
           test -f catalog.js
           test -f current-global-catalog.js
+          test -f auto-catalog.js
           test -f wiki-legacy-fallback.js
           test -f detail-hooks.js
           test -f upgrade-recommend.js
@@ -38,3 +41,4 @@ jobs:
           test -f duplicate-guard.js
           test -f scripts/build-farmable-catalog.mjs
           test -f scripts/build-farmable-catalog-safe.mjs
+          test -f scripts/build-master-catalog.mjs
