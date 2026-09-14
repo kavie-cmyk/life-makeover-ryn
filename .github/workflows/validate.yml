@@ -13,9 +13,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check JavaScript syntax
-        run: node --check app.js
+        run: |
+          node --check app.js
+          node --check catalog.js
       - name: Verify required files
         run: |
           test -f index.html
           test -f styles.css
           test -f app.js
+          test -f catalog.js
