@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f5efff" />
+  <title>Ryn Wardrobe Lab · Life Makeover</title>
+  <meta name="description" content="Quản lý wardrobe Life Makeover, tìm best set theo thuộc tính và xếp hạng món nên săn tiếp theo." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">R</div>
+        <div>
+          <strong>Ryn Wardrobe Lab</strong>
+          <span>Life Makeover optimizer</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Điều hướng chính">
+        <button class="nav-btn active" data-view="dashboard"><span>✦</span> Tổng quan</button>
+        <button class="nav-btn" data-view="optimizer"><span>◇</span> Best set</button>
+        <button class="nav-btn" data-view="inventory"><span>▦</span> Kho đồ</button>
+        <button class="nav-btn" data-view="targets"><span>◎</span> Nên săn gì?</button>
+        <button class="nav-btn" data-view="data"><span>⇅</span> Dữ liệu</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="mini-stat"><span id="sidebarOwned">0</span><small>đang sở hữu</small></div>
+        <div class="mini-stat"><span id="sidebarTargets">0</span><small>mục tiêu</small></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn" aria-label="Mở menu">☰</button>
+        <div>
+          <p class="eyebrow">WARDROBE DECISION TOOL</p>
+          <h1 id="pageTitle">Tổng quan</h1>
+        </div>
+        <button class="primary-btn" id="quickAddBtn">+ Thêm món</button>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <div class="hero-card">
+          <div>
+            <span class="pill">MY WARDROBE</span>
+            <h2>Nhìn một phát biết<br><em>đang thiếu món gì.</em></h2>
+            <p>Chọn từng thuộc tính để xem bộ mạnh nhất hiện tại, cơ cấu sao và khoảng trống nâng điểm.</p>
+          </div>
+          <div class="hero-score">
+            <span>Best score cao nhất</span>
+            <strong id="heroBestScore">0</strong>
+            <small id="heroBestStyle">Chưa có dữ liệu</small>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">10 THUỘC TÍNH</p>
+            <h3>Best set hiện tại</h3>
+          </div>
+          <p class="hint">Bấm vào một thuộc tính để xem chi tiết bộ.</p>
+        </div>
+        <div class="style-grid" id="styleGrid"></div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">UPGRADE RADAR</p><h3>Ưu tiên nâng cấp</h3></div>
+              <button class="text-btn" data-go="targets">Xem tất cả →</button>
+            </div>
+            <div id="upgradePreview" class="empty-state">Thêm item để bắt đầu phân tích.</div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">COLLECTION MIX</p><h3>Cơ cấu rarity</h3></div>
+            </div>
+            <div id="raritySummary" class="rarity-summary"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-optimizer">
+        <div class="toolbar-card">
+          <div>
+            <p class="eyebrow">OUTFIT OPTIMIZER</p>
+            <h2>Bộ điểm cao nhất theo thuộc tính</h2>
+          </div>
+          <label class="select-wrap">Thuộc tính
+            <select id="optimizerStyle"></select>
+          </label>
+        </div>
+
+        <div class="optimizer-summary" id="optimizerSummary"></div>
+        <div class="outfit-layout">
+          <div class="panel outfit-panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">CURRENT BEST</p><h3 id="outfitTitle">Best set</h3></div>
+            </div>
+            <div class="outfit-list" id="outfitList"></div>
+          </div>
+          <div class="panel insight-panel">
+            <div class="panel-head"><div><p class="eyebrow">WHAT TO FIX</p><h3>Khoảng trống</h3></div></div>
+            <div id="optimizerInsights"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-inventory">
+        <div class="toolbar-card wrap-toolbar">
+          <div>
+            <p class="eyebrow">INVENTORY</p>
+            <h2>Tất cả món đã nhập</h2>
+          </div>
+          <div class="filters">
+            <input id="inventorySearch" type="search" placeholder="Tìm tên / set..." />
+            <select id="inventoryStatusFilter">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="owned">Đang sở hữu</option>
+              <option value="target">Mục tiêu</option>
+            </select>
+            <select id="inventoryRarityFilter">
+              <option value="all">Tất cả rarity</option>
+              <option value="6">6★</option>
+              <option value="5">5★</option>
+              <option value="4">4★</option>
+              <option value="3">3★</option>
+            </select>
+          </div>
+        </div>
+        <div class="inventory-meta" id="inventoryMeta"></div>
+        <div class="inventory-table-wrap">
+          <table class="inventory-table">
+            <thead><tr><th>Món đồ</th><th>Slot</th><th>Sao</th><th>Trạng thái</th><th>Điểm mạnh nhất</th><th></th></tr></thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+        <div class="mobile-card-list" id="inventoryCards"></div>
+      </section>
+
+      <section class="view" id="view-targets">
+        <div class="toolbar-card">
+          <div>
+            <p class="eyebrow">NEXT ITEM</p>
+            <h2>Món tiếp theo nên săn</h2>
+            <p>Candidate được giả lập thay vào wardrobe để tính phần điểm tăng thật.</p>
+          </div>
+          <label class="select-wrap">Thuộc tính
+            <select id="targetStyle"></select>
+          </label>
+        </div>
+        <div id="targetHero"></div>
+        <div class="section-head"><div><p class="eyebrow">RANKING</p><h3>Candidate theo mức tăng điểm</h3></div></div>
+        <div class="target-list" id="targetList"></div>
+        <div class="panel" id="fallbackTargetPanel"></div>
+      </section>
+
+      <section class="view" id="view-data">
+        <div class="data-grid">
+          <article class="panel">
+            <p class="eyebrow">BACKUP</p><h3>Xuất / nhập toàn bộ dữ liệu</h3>
+            <p class="muted">Dữ liệu được lưu trên trình duyệt này. Nên export JSON định kỳ để backup.</p>
+            <div class="button-row">
+              <button class="secondary-btn" id="exportJsonBtn">Xuất JSON</button>
+              <label class="secondary-btn file-btn">Nhập JSON<input type="file" id="importJsonInput" accept="application/json,.json" /></label>
+            </div>
+          </article>
+          <article class="panel">
+            <p class="eyebrow">BULK INPUT</p><h3>Nhập nhanh bằng CSV</h3>
+            <p class="muted">Tải template, điền hàng loạt rồi import. Các cột điểm có thể để trống.</p>
+            <div class="button-row">
+              <button class="secondary-btn" id="csvTemplateBtn">Tải CSV mẫu</button>
+              <label class="secondary-btn file-btn">Nhập CSV<input type="file" id="importCsvInput" accept="text/csv,.csv" /></label>
+            </div>
+          </article>
+          <article class="panel danger-zone">
+            <p class="eyebrow">RESET</p><h3>Xóa dữ liệu trên máy</h3>
+            <p class="muted">Không ảnh hưởng repo GitHub. Chỉ xóa inventory đang lưu trong browser hiện tại.</p>
+            <button class="danger-btn" id="resetBtn">Xóa toàn bộ dữ liệu</button>
+          </article>
+        </div>
+
+        <article class="panel data-notes">
+          <p class="eyebrow">SCORING MODEL</p><h3>App đang tính như thế nào?</h3>
+          <div class="notes-grid">
+            <div><strong>1. Một món / một slot</strong><p>Mỗi loại fashion chọn item có điểm thuộc tính cao nhất.</p></div>
+            <div><strong>2. Dress vs Top + Bottom</strong><p>App so sánh Dress với tổng Top + Bottom rồi chọn phương án cao hơn.</p></div>
+            <div><strong>3. Điểm nhập = điểm hiệu lực</strong><p>Nếu dye/palette làm rating thay đổi, nhập rating hiện tại sau nâng cấp.</p></div>
+            <div><strong>4. Candidate simulation</strong><p>Item “Mục tiêu” không tính vào set hiện tại; app chỉ giả lập để đo phần gain.</p></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="itemModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <div><p class="eyebrow">ITEM EDITOR</p><h2 id="modalTitle">Thêm món đồ</h2></div>
+        <button class="icon-btn" id="closeModalBtn" aria-label="Đóng">×</button>
+      </div>
+      <form id="itemForm">
+        <input type="hidden" id="itemId" />
+        <div class="form-grid two">
+          <label>Tên món đồ *<input id="itemName" required placeholder="VD: Moonlight Wander" /></label>
+          <label>Set<input id="itemSet" placeholder="VD: Jade Moon" /></label>
+          <label>Slot / loại fashion *<select id="itemType" required></select></label>
+          <label>Rarity *<select id="itemRarity" required><option value="6">6★</option><option value="5">5★</option><option value="4">4★</option><option value="3">3★</option></select></label>
+          <label>Trạng thái *<select id="itemStatus" required><option value="owned">Đang sở hữu</option><option value="target">Mục tiêu / chưa có</option></select></label>
+          <label>Nguồn / cách lấy<input id="itemSource" placeholder="Lightchase, shop, event..." /></label>
+        </div>
+
+        <div class="score-editor-head">
+          <div><p class="eyebrow">ATTRIBUTE SCORES</p><h3>Điểm theo thuộc tính</h3></div>
+          <p class="hint">Không có điểm thì để 0.</p>
+        </div>
+        <div class="score-input-grid" id="scoreInputs"></div>
+
+        <div class="form-grid two extra-fields">
+          <label>Link ảnh (không bắt buộc)<input id="itemImage" type="url" placeholder="https://..." /></label>
+          <label>Ghi chú<input id="itemNote" placeholder="Dye 8/16, cần rerun..." /></label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="danger-link" id="deleteItemBtn" hidden>Xóa món này</button>
+          <div class="spacer"></div>
+          <button type="button" class="secondary-btn" id="cancelModalBtn">Hủy</button>
+          <button type="submit" class="primary-btn">Lưu món đồ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
