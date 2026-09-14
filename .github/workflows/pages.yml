@@ -3,10 +3,19 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: ["main"]
+  schedule:
+    - cron: "17 0,12 * * *"
   workflow_dispatch:
+    inputs:
+      refresh_catalog:
+        description: "Rebuild farmable Wiki catalog before deploy"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -29,8 +38,36 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build farmable Wiki catalog
-        run: node scripts/build-farmable-catalog-safe.mjs
+      - name: Reuse latest farmable catalog for fast deploys
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.refresh_catalog != true)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p data .catalog-cache
+          ARTIFACT_ID="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=github-pages&per_page=20" --jq '.artifacts | map(select(.expired == false)) | sort_by(.created_at) | reverse | .[0].id // empty')"
+          if [ -n "$ARTIFACT_ID" ]; then
+            echo "Reusing catalog from Pages artifact $ARTIFACT_ID"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > .catalog-cache/pages.zip
+            unzip -p .catalog-cache/pages.zip artifact.tar > .catalog-cache/artifact.tar
+            mkdir -p .catalog-cache/extracted
+            tar -xf .catalog-cache/artifact.tar -C .catalog-cache/extracted ./data/farmable-catalog.json || true
+            if [ -s .catalog-cache/extracted/data/farmable-catalog.json ]; then
+              cp .catalog-cache/extracted/data/farmable-catalog.json data/farmable-catalog.json
+            fi
+          fi
+
+      - name: Build fresh farmable Wiki catalog when needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.refresh_catalog || false }}" = "true" ] || [ ! -s data/farmable-catalog.json ]; then
+            echo "Building fresh catalog"
+            node scripts/build-farmable-catalog-safe.mjs
+          else
+            echo "Using cached catalog: $(node -e \"const x=require('./data/farmable-catalog.json'); console.log((x.count||x.items?.length||0)+' items · '+(x.generatedAt||'unknown time'))\")"
+          fi
 
       - name: Prepare deployed HTML
         shell: bash
