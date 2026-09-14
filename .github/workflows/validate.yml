@@ -20,6 +20,7 @@ jobs:
           node --check upgrade-recommend.js
           node --check farm-scan.js
           node --check scripts/build-farmable-catalog.mjs
+          node --check scripts/build-farmable-catalog-safe.mjs
       - name: Verify required files
         run: |
           test -f index.html
@@ -30,3 +31,4 @@ jobs:
           test -f upgrade-recommend.js
           test -f farm-scan.js
           test -f scripts/build-farmable-catalog.mjs
+          test -f scripts/build-farmable-catalog-safe.mjs
