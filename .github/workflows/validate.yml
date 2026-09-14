@@ -16,6 +16,7 @@ jobs:
         run: |
           node --check app.js
           node --check catalog.js
+          node --check current-global-catalog.js
           node --check wiki-legacy-fallback.js
           node --check detail-hooks.js
           node --check upgrade-recommend.js
@@ -29,6 +30,7 @@ jobs:
           test -f styles.css
           test -f app.js
           test -f catalog.js
+          test -f current-global-catalog.js
           test -f wiki-legacy-fallback.js
           test -f detail-hooks.js
           test -f upgrade-recommend.js
