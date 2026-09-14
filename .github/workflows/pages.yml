@@ -24,6 +24,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build farmable Wiki catalog
+        run: node scripts/build-farmable-catalog.mjs
+
+      - name: Prepare deployed HTML
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          let html = fs.readFileSync('index.html', 'utf8');
+          if (!html.includes('farm-scan.js')) {
+            const version = process.env.GITHUB_SHA?.slice(0, 12) || Date.now();
+            html = html.replace('</body>', `  <script src="farm-scan.js?v=${version}"></script>\n</body>`);
+            fs.writeFileSync('index.html', html);
+          }
+          if (!fs.existsSync('data/farmable-catalog.json')) process.exit(2);
+          NODE
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
