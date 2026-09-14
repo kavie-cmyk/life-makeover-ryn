@@ -18,6 +18,8 @@ jobs:
           node --check catalog.js
           node --check detail-hooks.js
           node --check upgrade-recommend.js
+          node --check farm-scan.js
+          node --check scripts/build-farmable-catalog.mjs
       - name: Verify required files
         run: |
           test -f index.html
@@ -26,3 +28,5 @@ jobs:
           test -f catalog.js
           test -f detail-hooks.js
           test -f upgrade-recommend.js
+          test -f farm-scan.js
+          test -f scripts/build-farmable-catalog.mjs
