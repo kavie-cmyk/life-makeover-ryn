@@ -17,6 +17,7 @@ jobs:
           node --check app.js
           node --check catalog.js
           node --check detail-hooks.js
+          node --check upgrade-recommend.js
       - name: Verify required files
         run: |
           test -f index.html
@@ -24,3 +25,4 @@ jobs:
           test -f app.js
           test -f catalog.js
           test -f detail-hooks.js
+          test -f upgrade-recommend.js
