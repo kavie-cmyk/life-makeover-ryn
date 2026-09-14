@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f5efff" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Ryn Wardrobe Lab · Life Makeover</title>
   <meta name="description" content="Quản lý wardrobe Life Makeover, tìm best set theo thuộc tính và xếp hạng món nên săn tiếp theo." />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20260914-2338" />
 </head>
 <body>
   <div class="app-shell">
@@ -236,7 +239,17 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
-  <script src="catalog.js"></script>
+  <script>
+    (() => {
+      const migrationKey = "rynWardrobeLab.wikiCacheFix.20260914-2338";
+      if (!localStorage.getItem(migrationKey)) {
+        localStorage.removeItem("rynWardrobeLab.wikiCache.v1");
+        localStorage.removeItem("rynWardrobeLab.wikiCache.v2");
+        localStorage.setItem(migrationKey, "1");
+      }
+    })();
+  </script>
+  <script src="app.js?v=20260914-2338"></script>
+  <script src="catalog.js?v=20260914-2338"></script>
 </body>
 </html>
