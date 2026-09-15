@@ -26,6 +26,7 @@ jobs:
           node --check scripts/build-farmable-catalog.mjs
           node --check scripts/build-farmable-catalog-safe.mjs
           node --check scripts/build-master-catalog.mjs
+          node --check scripts/enrich-current-global.mjs
       - name: Verify required files
         run: |
           test -f index.html
@@ -42,3 +43,4 @@ jobs:
           test -f scripts/build-farmable-catalog.mjs
           test -f scripts/build-farmable-catalog-safe.mjs
           test -f scripts/build-master-catalog.mjs
+          test -f scripts/enrich-current-global.mjs
