@@ -89,6 +89,12 @@ jobs:
           NODE
           fi
 
+      - name: Enrich current Global releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/enrich-current-global.mjs
+
       - name: Prepare deployed HTML
         shell: bash
         run: |
