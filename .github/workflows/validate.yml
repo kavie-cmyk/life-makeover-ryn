@@ -23,6 +23,7 @@ jobs:
           node --check upgrade-recommend.js
           node --check farm-scan.js
           node --check duplicate-guard.js
+          node --check cloud-sync.js
           node --check scripts/build-farmable-catalog.mjs
           node --check scripts/build-farmable-catalog-safe.mjs
           node --check scripts/build-master-catalog.mjs
@@ -40,6 +41,7 @@ jobs:
           test -f upgrade-recommend.js
           test -f farm-scan.js
           test -f duplicate-guard.js
+          test -f cloud-sync.js
           test -f scripts/build-farmable-catalog.mjs
           test -f scripts/build-farmable-catalog-safe.mjs
           test -f scripts/build-master-catalog.mjs
