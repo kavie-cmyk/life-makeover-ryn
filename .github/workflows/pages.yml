@@ -89,6 +89,13 @@ jobs:
           NODE
           fi
 
+      - name: Resolve screenshot batch against Wiki
+        if: ${{ hashFiles('scripts/batch-items.json') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/resolve-batch-items.mjs
+
       - name: Enrich current Global releases
         shell: bash
         run: |
@@ -134,6 +141,7 @@ jobs:
         run: |
           node -e "const x=require('./data/master-catalog.json'); if(!Array.isArray(x.records)||!Array.isArray(x.provisional)) process.exit(2); console.log('master',x.records.length,'exact',x.provisional.length,'provisional')"
           node -e "const x=require('./data/farmable-catalog.json'); if(!Array.isArray(x.items)) process.exit(2); console.log('farmable',x.items.length)"
+          if [ -f data/batch-resolved.json ]; then node -e "const x=require('./data/batch-resolved.json'); if(!Array.isArray(x.results)) process.exit(2); console.log('batch',x.matched,'matched',x.complete,'complete of',x.count)"; fi
           node --check cloud-sync.js
 
       - name: Configure Pages
