@@ -1,9 +1,10 @@
 /* Ryn Wardrobe Lab · auto-synced multi-source catalog.
- * Exact English name match: wiki.gg / Official Global.
+ * Exact English name match: Current Global overrides / wiki.gg / Official Global.
  * BWIKI-only rows stay provisional and may only fill stats when Set + Slot + Rarity identify one unique piece.
  */
 (() => {
   const MASTER_URL = 'data/master-catalog.json?v=auto';
+  const RATING_BASE = { C:10, B:20, A:30, S:40, SS:50, SSS:60 };
   let masterPromise = null;
   let activeRecord = null;
   let provisionalRecord = null;
@@ -22,6 +23,30 @@
       });
     }
     return masterPromise;
+  }
+
+  function localCurrentGlobalRecords() {
+    const rows = Array.isArray(window.RYN_CURRENT_GLOBAL_CATALOG) ? window.RYN_CURRENT_GLOBAL_CATALOG : [];
+    return rows.map(row => {
+      const stats = {};
+      const scores = {};
+      Object.entries(row.stats || {}).forEach(([style,stat]) => {
+        const rating = String(stat?.rating || '').toUpperCase();
+        const score = Number(stat?.score || RATING_BASE[rating] || 0);
+        stats[style] = {...stat,rating,score};
+        scores[style] = score;
+      });
+      return {
+        ...row,
+        stats,
+        scores,
+        sourceRefs:['Current Global'],
+        confidence:'verified-current-global',
+        image:row.image || '',
+        url:row.sourceUrl || '',
+        __currentGlobal:true
+      };
+    });
   }
 
   function ensureUi() {
@@ -43,7 +68,7 @@
     const style = document.createElement('style');
     style.id = 'autoCatalogStyles';
     style.textContent = `
-      .auto-catalog-card{grid-column:1/-1;margin:-2px 0 4px;padding:12px 13px;border:1px solid #d9e2f2;border-radius:15px;background:#f6f9ff}.auto-catalog-card[hidden]{display:none}.auto-catalog-top{display:flex;justify-content:space-between;gap:10px;align-items:start}.auto-catalog-card strong{font-size:12px}.auto-catalog-meta{font-size:9px;color:var(--muted);line-height:1.5;margin-top:4px}.auto-catalog-badge{display:inline-flex;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:850;background:#e5efff;color:#35649a;white-space:nowrap}.auto-catalog-badge.provisional{background:#fff2d5;color:#83641a}.auto-catalog-stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.auto-catalog-stat{background:#fff;border:1px solid #dce5f3;border-radius:999px;padding:5px 7px;font-size:9px}.auto-catalog-note{font-size:9px;line-height:1.45;color:#6f7887;margin-top:8px}.auto-catalog-actions{display:flex;gap:8px;margin-top:8px}.auto-catalog-actions button{border:1px solid #d7dfef;background:#fff;color:var(--accent);font:inherit;font-size:9px;font-weight:850;border-radius:9px;min-height:34px;padding:0 10px}.catalog-freshness{display:block;font-size:8px;color:var(--muted);margin-top:5px}
+      .auto-catalog-card{grid-column:1/-1;margin:-2px 0 4px;padding:12px 13px;border:1px solid #d9e2f2;border-radius:15px;background:#f6f9ff}.auto-catalog-card[hidden]{display:none}.auto-catalog-top{display:flex;justify-content:space-between;gap:10px;align-items:start}.auto-catalog-card strong{font-size:12px}.auto-catalog-meta{font-size:9px;color:var(--muted);line-height:1.5;margin-top:4px}.auto-catalog-badge{display:inline-flex;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:850;background:#e5efff;color:#35649a;white-space:nowrap}.auto-catalog-badge.provisional{background:#fff2d5;color:#83641a}.auto-catalog-badge.current{background:#dff3e5;color:#31704a}.auto-catalog-stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.auto-catalog-stat{background:#fff;border:1px solid #dce5f3;border-radius:999px;padding:5px 7px;font-size:9px}.auto-catalog-note{font-size:9px;line-height:1.45;color:#6f7887;margin-top:8px}.auto-catalog-actions{display:flex;gap:8px;margin-top:8px}.auto-catalog-actions button{border:1px solid #d7dfef;background:#fff;color:var(--accent);font:inherit;font-size:9px;font-weight:850;border-radius:9px;min-height:34px;padding:0 10px}.catalog-freshness{display:block;font-size:8px;color:var(--muted);margin-top:5px}
     `;
     document.head.appendChild(style);
   }
@@ -60,8 +85,10 @@
     const sourceRefs = (record.sourceRefs || []).join(' + ') || (provisional ? 'BWIKI' : 'Auto Catalog');
     const title = provisional ? (record.cnName || record.name || 'BWIKI item') : record.name;
     const set = record.set || record.setCn || '';
+    const badge = provisional ? 'PROVISIONAL BWIKI' : (record.__currentGlobal ? 'CURRENT GLOBAL' : 'AUTO SYNC');
+    const badgeClass = provisional ? 'provisional' : (record.__currentGlobal ? 'current' : '');
     box.hidden = false;
-    box.innerHTML = `<div class="auto-catalog-top"><div><strong>${esc(title)}</strong><div class="auto-catalog-meta">${esc(record.type || '')} · ${record.rarity || '?'}★${set ? ` · ${esc(set)}` : ''}<br>${esc(record.source || sourceRefs)}</div></div><span class="auto-catalog-badge ${provisional ? 'provisional' : ''}">${provisional ? 'PROVISIONAL BWIKI' : 'AUTO SYNC'}</span></div>${pills ? `<div class="auto-catalog-stats">${pills}</div>` : ''}<div class="auto-catalog-note">${esc(message || (provisional ? 'Tên item Global chưa có nguồn English đáng tin cậy. App chỉ dùng record này khi Set + Slot + Rarity match duy nhất; tên bạn nhập được giữ nguyên.' : `Record tự đồng bộ từ ${sourceRefs}.`))}</div>${provisional ? `<div class="auto-catalog-actions"><button type="button" id="applyProvisionalCatalogBtn">Dùng stat này</button></div>` : ''}`;
+    box.innerHTML = `<div class="auto-catalog-top"><div><strong>${esc(title)}</strong><div class="auto-catalog-meta">${esc(record.type || '')} · ${record.rarity || '?'}★${set ? ` · ${esc(set)}` : ''}<br>${esc(record.source || sourceRefs)}</div></div><span class="auto-catalog-badge ${badgeClass}">${badge}</span></div>${pills ? `<div class="auto-catalog-stats">${pills}</div>` : ''}<div class="auto-catalog-note">${esc(message || (provisional ? 'Tên item Global chưa có nguồn English đáng tin cậy. App chỉ dùng record này khi Set + Slot + Rarity match duy nhất; tên bạn nhập được giữ nguyên.' : `Record tự đồng bộ từ ${sourceRefs}.`))}</div>${provisional ? `<div class="auto-catalog-actions"><button type="button" id="applyProvisionalCatalogBtn">Dùng stat này</button></div>` : ''}`;
     if (provisional) box.querySelector('#applyProvisionalCatalogBtn')?.addEventListener('click',()=>applyProvisional(record));
   }
 
@@ -80,7 +107,7 @@
       const box = input.closest('.score-input');
       if (!box) return;
       const rating = record?.stats?.[style]?.rating;
-      if (rating) box.dataset.wikiRating = `${rating} · ${label}`;
+      if (rating) box.dataset.wikiRating = `${rating} · ${record.__currentGlobal ? 'Current Global' : label}`;
       else delete box.dataset.wikiRating;
     });
   }
@@ -102,9 +129,9 @@
     setField('itemSource',record.source || '');
     setField('itemImage',record.image || '');
     applyScores(record,(record.sourceRefs || []).includes('wiki.gg') ? 'Wiki sync' : 'Official sync');
-    render(record,{message:`Đã match master catalog · confidence: ${record.confidence || 'verified'}.`});
+    render(record,{message:record.__currentGlobal ? 'Đã match Current Global override · dùng ngay trong khi wiki.gg chưa cập nhật item.' : `Đã match master catalog · confidence: ${record.confidence || 'verified'}.`});
     document.getElementById('wikiResults')?.classList.remove('show');
-    statusGood('Đã match Auto Catalog · dữ liệu được đồng bộ định kỳ.');
+    statusGood(record.__currentGlobal ? 'Đã match Current Global catalog · ưu tiên hơn Wiki autocomplete.' : 'Đã match Auto Catalog · dữ liệu được đồng bộ định kỳ.');
     document.getElementById('itemName')?.dispatchEvent(new Event('change',{bubbles:true}));
   }
 
@@ -123,7 +150,16 @@
   function exactByName(master,name) {
     const n = norm(name);
     if (!n) return null;
-    const matches = master.records.filter(r => norm(r.name) === n || (r.aliases || []).some(a=>norm(a)===n));
+    const all = [...localCurrentGlobalRecords(), ...(master.records || [])];
+    const matches = all.filter(r => norm(r.name) === n || (r.aliases || []).some(a=>norm(a)===n));
+    if (!matches.length) return null;
+    const current = matches.filter(r=>r.__currentGlobal);
+    if (current.length === 1) return current[0];
+    if (current.length > 1) {
+      const type = document.getElementById('itemType')?.value || '';
+      const rarity = Number(document.getElementById('itemRarity')?.value || 0);
+      return current.find(r => (!type || r.type === type) && (!rarity || Number(r.rarity) === rarity)) || current[0];
+    }
     if (matches.length === 1) return matches[0];
     const type = document.getElementById('itemType')?.value || '';
     const rarity = Number(document.getElementById('itemRarity')?.value || 0);
@@ -146,6 +182,7 @@
       const master = await loadMaster();
       const record = exactByName(master,name);
       if (!record) return null;
+      stopEvent?.preventDefault?.();
       stopEvent?.stopImmediatePropagation?.();
       applyExact(record);
       return record;
@@ -179,9 +216,14 @@
       item.masterCatalog = {
         confidence:record.confidence || (record.cnName ? 'provisional-cn' : 'verified'),sourceRefs:record.sourceRefs || [],url:record.url || '',setUrl:record.setUrl || '',cnName:record.cnName || '',setCn:record.setCn || '',updatedAt:new Date().toISOString()
       };
-      if (record.url && !item.wiki) {
+      if (record.url && !item.wiki && !record.__currentGlobal) {
         item.wiki = {
           title:item.name,page:item.name,url:record.url,type:item.type,rarity:item.rarity,set:item.set || '',source:item.source || '',tags:record.tags || [],thumbnail:item.image || '',stats:record.stats || {},scores:record.scores || {},fetchedAt:new Date().toISOString(),sourceKind:record.cnName ? 'bwiki-provisional' : 'auto-master'
+        };
+      }
+      if (record.__currentGlobal) {
+        item.globalCatalog = {
+          name:record.name,type:record.type,rarity:record.rarity,set:record.set || '',source:record.source || '',sourceUrl:record.url || '',stats:record.stats || {},scoreMode:'rating-tier-only',updatedAt:new Date().toISOString()
         };
       }
       if (typeof saveItems === 'function') saveItems();
@@ -208,7 +250,7 @@
     name?.addEventListener('input',event=>{
       const value = event.target.value;
       if (value.trim().length < 2) { activeRecord=null; provisionalRecord=null; render(null); return; }
-      resolveExact().then(found=>{ if (!found) resolveProvisional(); });
+      resolveExact({stopEvent:event}).then(found=>{ if (!found) resolveProvisional(); });
     },true);
     sync?.addEventListener('click',event=>{
       resolveExact({stopEvent:event}).then(found=>{ if (!found) resolveProvisional(); });
