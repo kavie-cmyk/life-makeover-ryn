@@ -1,0 +1,458 @@
+[
+  {
+    "name": "Double Concerto",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Busy Night",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Sunny Clouds",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Silent Nocturne",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Star Trace",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Cloud Pile",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Eternal Story",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Island Spirit",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Eternal Flower",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Gentle Nocturne",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Night Breeze",
+    "type": "Hairstyle",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Sweet Research",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Layered Berries",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Nightcat's Whisper",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Coiled Topknot",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Aloof Lily",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Deep Attachment",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Laurel",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Fluffy Dream",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Play and Sing",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Iris Dream",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "prev"
+  },
+  {
+    "name": "Frosted Silk",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Zero-G Sweet",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Moonlit Isle",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Milk Chirp",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Magic Rhyme",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Whispering Wings",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Leaping Gold",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Enchanted Melody",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Bunny Whisper",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Petal Spring",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Miss Lily",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Morgana's Gift",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Moonlit Shell",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "prev"
+  },
+  {
+    "name": "Hearty Soda",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Cheerful Melody",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Shining Night",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Cocoon",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Cat Words",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Summer Cherry",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Summer Memory",
+    "type": "Hairstyle",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Starry Sunset",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Daytime Stars",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Comet's Tail",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Good Wishes",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Worn Seasalt",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Fashion Signal",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Light & Bird",
+    "type": "Hairstyle",
+    "rarity": 3,
+    "batch": "current"
+  },
+  {
+    "name": "Shallow Sleep",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Lost Tale",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Aron's Daughter",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Dawn Concerto",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Plaid's Secret",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Sunny Ride",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Firefly Avenue",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Violet Love Poem",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Salty Life",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Crane Dance",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Tipsy Jam",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Island Starshine",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Evernight Rose",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Starsnow Love",
+    "type": "Dress",
+    "rarity": 5,
+    "batch": "current"
+  },
+  {
+    "name": "Boundary Walker",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Candy Kingdom",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Soft Smoke",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Black Gold Hunter",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Blue Sunday",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Apricot Sunset",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Plum Age",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Creek Magnolia",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Colorful Heart",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Whispering Lane",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Heart Iris",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Plain Moon",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Razor Jello",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  },
+  {
+    "name": "Silent Midnight",
+    "type": "Dress",
+    "rarity": 4,
+    "batch": "current"
+  }
+]
