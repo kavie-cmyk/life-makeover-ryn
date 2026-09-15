@@ -1,30 +1,22 @@
 import fs from 'node:fs/promises';
 
 const MASTER = 'data/master-catalog.json';
-const STEAM = 'https://steamcommunity.com/app/2626940/announcements/?l=english';
+const STEAM_URLS = [
+  'https://steamcommunity.com/app/2626940/?l=english',
+  'https://steamcommunity.com/app/2626940/announcements/?l=english',
+  'https://steamcommunity.com/app/2626940/allnews/?l=english'
+];
 const BWIKI = 'https://wiki.biligame.com/yslzgame';
 const BWIKI_HOME = `${BWIKI}/%E9%A6%96%E9%A1%B5`;
-const RATING_BASE = { C:10, B:20, A:30, S:40, SS:50, SSS:60 };
-const TYPE_CN = {
-  '发型':'Hairstyle','连衣裙':'Dress','外套':'Coat','上衣':'Top','下装':'Bottom','袜子':'Socks','鞋子':'Shoes',
-  '帽子':'Hat','发饰':'Hair Accessory','面饰':'Face Accessory','耳饰':'Earrings','颈饰':'Necklace','腕饰':'Bracelet',
-  '手套':'Gloves','戒指':'Ring','手持物':'Handheld','翅膀':'Wings','尾巴':'Tail','背饰':'Wings','包':'Bag','脚链':'Anklet',
-  '斜挎':'Crossbody','悬浮':'Floating','纹身':'Tattoo','摩托':'Motor'
-};
-const STYLE_CN = {
-  '简约':'Simple','华丽':'Gorgeous','清纯':'Pure','性感':'Sexy','跃动':'Lively','典雅':'Elegant','甜美':'Sweet','酷帅':'Cool','清凉':'Fresh','保暖':'Warm'
-};
-const STYLES = ['Cool','Elegant','Fresh','Gorgeous','Lively','Pure','Sexy','Simple','Sweet','Warm'];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const norm = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
-const keyOf = (name,type,rarity) => `${norm(name)}|${norm(type)}|${Number(rarity || 0)}`;
 
 async function fetchText(url, tries = 4) {
   let last;
   for (let i=1;i<=tries;i++) {
     try {
-      const res = await fetch(url,{headers:{'user-agent':'RynWardrobeLab/2.1 (+GitHub catalog sync)','accept':'text/html,*/*'}});
+      const res = await fetch(url,{headers:{'user-agent':'RynWardrobeLab/2.2 (+GitHub catalog sync)','accept':'text/html,*/*'}});
       if (res.ok) return res.text();
       last = new Error(`${res.status} ${res.statusText}`);
       if (![429,500,502,503,504].includes(res.status)) throw last;
@@ -42,6 +34,7 @@ function decodeHtml(s='') {
     .replace(/&nbsp;|&#160;/gi,' ')
     .replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#039;|&apos;/gi,"'")
     .replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')
+    .replace(/&#91;|&lbrack;/gi,'[').replace(/&#93;|&rbrack;/gi,']')
     .replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCodePoint(parseInt(n,16)));
 }
@@ -57,11 +50,42 @@ function htmlText(html='') {
     .replace(/\n{3,}/g,'\n\n')).trim();
 }
 
-function parseCurrentFashionCodeGlobal(text) {
-  const blocks = [...text.matchAll(/New Fashion Code[\s\S]{0,1600}?5-Star Set\s*\[([^\]]+)\]/gi)];
-  if (!blocks.length) return null;
-  const name = blocks[0][1].trim();
-  return name ? {name,rarity:5} : null;
+function normalizeSteamText(raw='') {
+  const decoded = decodeHtml(raw)
+    .replace(/\\([\[\]])/g,'$1')
+    .replace(/\\u005b/gi,'[')
+    .replace(/\\u005d/gi,']');
+  return htmlText(decoded).replace(/\\([\[\]])/g,'$1');
+}
+
+function parseCurrentFashionCodeGlobal(raw) {
+  const text = normalizeSteamText(raw);
+  const patterns = [
+    /New Fashion Code[\s\S]{0,3000}?5[- ]Star Set\s*(?:[-–:]\s*)?\[\s*([^\]\n]+?)\s*\]/i,
+    /New Fashion Code[\s\S]{0,3000}?5[- ]Star Set\s*(?:[-–:]\s*)?([^\n]{2,80})/i
+  ];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (!m) continue;
+    const name = String(m[1] || '').replace(/^\[|\]$/g,'').replace(/[.。]+$/,'').trim();
+    if (name && !/event|detail|time/i.test(name)) return {name,rarity:5};
+  }
+  return null;
+}
+
+async function currentFashionCodeGlobal() {
+  const errors = [];
+  for (const url of STEAM_URLS) {
+    try {
+      const raw = await fetchText(url);
+      const found = parseCurrentFashionCodeGlobal(raw);
+      if (found) return {...found,url,checkedAt:new Date().toISOString(),errors};
+      errors.push(`${url}: no Fashion Code match`);
+    } catch (e) {
+      errors.push(`${url}: ${e.message || e}`);
+    }
+  }
+  return {name:'',rarity:5,url:STEAM_URLS[0],checkedAt:new Date().toISOString(),errors};
 }
 
 function parseCurrentFashionCodeCn(homeText) {
@@ -77,41 +101,12 @@ function parseCurrentFashionCodeCn(homeText) {
   return null;
 }
 
-function parseBwikiFashionPage(text,setCn) {
-  let type = '';
-  for (const [cn,en] of Object.entries(TYPE_CN)) {
-    if (text.includes(`〖${cn}〗`) || new RegExp(`${cn}\\s*$`,'m').test(text)) { type = en; break; }
-  }
-  const stats = {};
-  const scores = Object.fromEntries(STYLES.map(s=>[s,0]));
-  const re = /(简约|华丽|清纯|性感|跃动|典雅|甜美|酷帅|清凉|保暖)\s*(SSS|SS|S|A|B|C)\b/g;
-  for (const m of text.matchAll(re)) {
-    const style = STYLE_CN[m[1]];
-    if (!style || stats[style]) continue;
-    const rating = m[2].toUpperCase();
-    stats[style] = {rating,scale:null,score:RATING_BASE[rating] || 0};
-    scores[style] = RATING_BASE[rating] || 0;
-    if (Object.keys(stats).length >= 5) break;
-  }
-  const source = text.match(/获取途径\s*([\s\S]{0,120}?)(?:所属套装|取自|玩呐影响力)/)?.[1]?.replace(/\n+/g,' · ').trim() || '';
-  return {type,stats,scores,source,setCn};
-}
-
-function upsert(records,record) {
-  const k = keyOf(record.name,record.type,record.rarity);
-  const index = records.findIndex(r => (r.key || keyOf(r.name,r.type,r.rarity)) === k);
-  if (index < 0) records.push({...record,key:k});
-  else {
-    const old = records[index];
-    const oldStats = Object.keys(old.stats || {}).length;
-    const newStats = Object.keys(record.stats || {}).length;
-    records[index] = {
-      ...old,
-      ...(newStats >= oldStats ? record : {}),
-      key:k,
-      aliases:[...new Set([...(old.aliases || []),...(record.aliases || [])])],
-      sourceRefs:[...new Set([...(old.sourceRefs || []),...(record.sourceRefs || [])])]
-    };
+async function currentFashionCodeCn() {
+  try {
+    const raw = await fetchText(BWIKI_HOME);
+    return {ok:true,checkedAt:new Date().toISOString(),url:BWIKI_HOME,current:parseCurrentFashionCodeCn(htmlText(raw))};
+  } catch (e) {
+    return {ok:false,checkedAt:new Date().toISOString(),url:BWIKI_HOME,current:null,error:String(e.message || e)};
   }
 }
 
@@ -119,53 +114,37 @@ async function main() {
   const master = JSON.parse(await fs.readFile(MASTER,'utf8'));
   if (!Array.isArray(master.records)) throw new Error('master catalog missing records');
 
-  const status = {checkedAt:new Date().toISOString(),fashionCode:null,errors:[]};
-  try {
-    const [steamHtml,homeHtml] = await Promise.all([fetchText(STEAM),fetchText(BWIKI_HOME)]);
-    const global = parseCurrentFashionCodeGlobal(htmlText(steamHtml));
-    const cn = parseCurrentFashionCodeCn(htmlText(homeHtml));
-    status.fashionCode = {global,cn};
+  const [global,cn] = await Promise.all([currentFashionCodeGlobal(),currentFashionCodeCn()]);
+  const status = {checkedAt:new Date().toISOString(),fashionCode:{global,cn}};
 
-    if (global?.name && cn?.setCn) {
-      const itemUrl = `${BWIKI}/${encodeURIComponent(cn.setCn)}`;
-      const itemText = htmlText(await fetchText(itemUrl));
-      const parsed = parseBwikiFashionPage(itemText,cn.setCn);
-      if (!parsed.type) throw new Error(`BWIKI current Fashion Code set ${cn.setCn} has no detectable fashion type`);
-
-      const record = {
-        key:keyOf(global.name,parsed.type,global.rarity),
-        name:global.name,
-        type:parsed.type,
-        rarity:global.rarity,
-        set:global.name,
-        source:`Fashion Code · ${global.name}${parsed.source ? ` · ${parsed.source}` : ''}`,
-        aliases:[cn.setCn],
-        stats:parsed.stats,
-        scores:parsed.scores,
-        image:'',
-        url:itemUrl,
-        confidence:Object.keys(parsed.stats).length ? 'verified-cross-source' : 'official-name+bwiki-metadata',
-        sourceRefs:['Official Global','BWIKI'],
-        updatedAt:new Date().toISOString()
-      };
-      upsert(master.records,record);
-      status.fashionCode.mapped = {name:record.name,type:record.type,rarity:record.rarity,setCn:cn.setCn,stats:Object.keys(record.stats).length};
-      console.log(`current Fashion Code: ${record.name} · ${record.type} · ${record.rarity}★ · ${Object.keys(record.stats).length} stats`);
-    } else {
-      console.warn('current Fashion Code cross-source mapping unavailable',JSON.stringify({global,cn}));
-    }
-  } catch (e) {
-    status.errors.push(String(e.message || e));
-    console.warn('current Global enrichment skipped:',e.message || e);
+  // Important: Global and CN servers can run different Fashion Codes.
+  // Never pair their item-level records only because both are current.
+  const currentSets = Array.isArray(master.currentGlobalSets) ? master.currentGlobalSets.filter(x=>x?.name) : [];
+  if (global.name) {
+    const candidate = {
+      name:global.name,
+      rarity:Number(global.rarity || 5),
+      kind:'Fashion Code',
+      source:'Official Global · Current Fashion Code',
+      sourceUrl:global.url,
+      confidence:'official-set',
+      detectedAt:new Date().toISOString()
+    };
+    const idx = currentSets.findIndex(x=>norm(x.name)===norm(candidate.name) && Number(x.rarity)===candidate.rarity);
+    if (idx >= 0) currentSets[idx] = {...currentSets[idx],...candidate};
+    else currentSets.unshift(candidate);
+    master.currentGlobalSets = currentSets.slice(0,12);
+    console.log(`current Global Fashion Code set: ${candidate.name} · ${candidate.rarity}★`);
+  } else {
+    master.currentGlobalSets = currentSets;
+    console.warn('current Global Fashion Code not parsed',JSON.stringify(global.errors || []));
   }
 
-  master.records.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-  master.count = master.records.length;
   master.generatedAt = new Date().toISOString();
   master.sources ||= {};
   master.sources.currentGlobalOverlay = status;
   await fs.writeFile(MASTER,JSON.stringify(master,null,2));
-  console.log(`master enriched: ${master.count} exact + ${master.provisional?.length || 0} provisional`);
+  console.log(`master enriched: ${master.records.length} exact + ${master.provisional?.length || 0} provisional + ${master.currentGlobalSets?.length || 0} current Global sets`);
 }
 
 await main();
