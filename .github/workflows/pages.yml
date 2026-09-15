@@ -111,14 +111,18 @@ jobs:
           if (!html.includes('farm-scan.js')) {
             html = html.replace('</body>', `  <script src="farm-scan.js?v=${version}"></script>\n</body>`);
           }
+          if (!html.includes('cloud-sync.js')) {
+            html = html.replace('</body>', `  <script src="cloud-sync.js?v=${version}"></script>\n</body>`);
+          }
 
           html = html
             .replace(/current-global-catalog\.js\?v=[^"']+/g, `current-global-catalog.js?v=${version}`)
             .replace(/auto-catalog\.js\?v=[^"']+/g, `auto-catalog.js?v=${version}`)
-            .replace(/farm-scan\.js\?v=[^"']+/g, `farm-scan.js?v=${version}`);
+            .replace(/farm-scan\.js\?v=[^"']+/g, `farm-scan.js?v=${version}`)
+            .replace(/cloud-sync\.js\?v=[^"']+/g, `cloud-sync.js?v=${version}`);
           fs.writeFileSync('index.html', html);
 
-          for (const file of ['data/farmable-catalog.json','data/master-catalog.json','auto-catalog.js']) {
+          for (const file of ['data/farmable-catalog.json','data/master-catalog.json','auto-catalog.js','cloud-sync.js']) {
             if (!fs.existsSync(file)) {
               console.error(`Missing deploy file: ${file}`);
               process.exit(2);
@@ -130,6 +134,7 @@ jobs:
         run: |
           node -e "const x=require('./data/master-catalog.json'); if(!Array.isArray(x.records)||!Array.isArray(x.provisional)) process.exit(2); console.log('master',x.records.length,'exact',x.provisional.length,'provisional')"
           node -e "const x=require('./data/farmable-catalog.json'); if(!Array.isArray(x.items)) process.exit(2); console.log('farmable',x.items.length)"
+          node --check cloud-sync.js
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
