@@ -36,6 +36,22 @@
         Gorgeous:{rating:"A"},
         Fresh:{rating:"B"}
       }
+    },
+    {
+      name:"Moonlit Isle",
+      type:"Dress",
+      rarity:5,
+      set:"Moonlit Isle",
+      source:"Fashion Code · Moonlit Isle · Sep 9–Oct 20, 2026",
+      sourceUrl:"https://steamcommunity.com/app/2626940",
+      evidence:"In-game screenshot + official Global Fashion Code",
+      stats:{
+        Pure:{rating:"SS"},
+        Sweet:{rating:"S"},
+        Gorgeous:{rating:"A"},
+        Elegant:{rating:"A"},
+        Fresh:{rating:"B"}
+      }
     }
   ];
 
@@ -114,7 +130,6 @@
       renderRecord(null);
       return;
     }
-    // Exact current-Global match wins over a stale/missing wiki.gg page.
     event.stopImmediatePropagation();
     applyRecord(record);
   }
