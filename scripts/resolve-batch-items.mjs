@@ -6,16 +6,31 @@ const INPUT = 'scripts/batch-items.json';
 const OUTPUT = 'data/batch-resolved.json';
 const STYLES = ['Cool','Elegant','Fresh','Gorgeous','Lively','Pure','Sexy','Simple','Sweet','Warm'];
 const RATING_BASE = { C:10, B:20, A:30, S:40, SS:50, SSS:60 };
+const NAME_ALIASES = {
+  "Aron's Daughter": "Amon's Daughter"
+};
+const TYPE_ALIASES = {
+  Dresses: 'Dress',
+  Dress: 'Dress',
+  Hairstyles: 'Hairstyle',
+  Hairstyle: 'Hairstyle',
+  'Hair Accessories': 'Hair Accessory',
+  'Hair Accessory': 'Hair Accessory',
+  Hats: 'Hat',
+  Hat: 'Hat'
+};
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const norm = s => String(s || '').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 const escRe = value => String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const canonicalType = value => TYPE_ALIASES[String(value || '').trim()] || String(value || '').trim();
+const lookupName = value => NAME_ALIASES[String(value || '').trim()] || String(value || '').trim();
 
 async function fetchRetry(url, tries=5) {
   let last;
   for (let i=1;i<=tries;i++) {
     try {
-      const res = await fetch(url,{headers:{'user-agent':'RynWardrobeLab/2.1 (+GitHub batch resolver)','accept':'application/json'}});
+      const res = await fetch(url,{headers:{'user-agent':'RynWardrobeLab/2.2 (+GitHub batch resolver)','accept':'application/json'}});
       if (res.ok) return res;
       last = new Error(`${res.status} ${res.statusText}`);
       if (![429,500,502,503,504].includes(res.status)) throw last;
@@ -66,7 +81,7 @@ function parse(title,wikitext) {
   if (!/\{\{\s*Fashion Infobox/i.test(wikitext)) return null;
   const info=block(wikitext,'Fashion Infobox')||wikitext;
   const statsBlock=block(wikitext,'Fashion Stats');
-  const type=cleanWiki(param(info,'type'));
+  const type=canonicalType(cleanWiki(param(info,'type')));
   const rarity=Number(cleanWiki(param(info,'rarity')))||0;
   if (!type || !rarity) return null;
   const set=cleanWiki(param(info,'set'));
@@ -95,32 +110,34 @@ async function fetchTitles(titles) {
   return out;
 }
 async function resolveOne(req) {
-  const directTitles=[req.name, `${req.name} (${req.type})`];
+  const wantedName=lookupName(req.name);
+  const wantedType=canonicalType(req.type);
+  const directTitles=[wantedName, `${wantedName} (${wantedType})`];
   let candidates=await fetchTitles(directTitles);
-  const exact = candidates.find(r => norm(r.name)===norm(req.name) && r.type===req.type && r.rarity===Number(req.rarity));
-  if (exact) return {...req,matched:true,ambiguous:false,record:exact,statCount:Object.keys(exact.stats).length,complete:Object.keys(exact.stats).length===5};
+  const exact = candidates.find(r => norm(r.name)===norm(wantedName) && canonicalType(r.type)===wantedType && r.rarity===Number(req.rarity));
+  if (exact) return {...req,resolvedName:wantedName,matched:true,ambiguous:false,record:exact,statCount:Object.keys(exact.stats).length,complete:Object.keys(exact.stats).length===5};
 
-  let typed = candidates.filter(r => r.type===req.type && r.rarity===Number(req.rarity));
+  let typed = candidates.filter(r => canonicalType(r.type)===wantedType && r.rarity===Number(req.rarity));
   if (typed.length===1) {
     const r=typed[0];
-    return {...req,matched:true,ambiguous:false,record:r,statCount:Object.keys(r.stats).length,complete:Object.keys(r.stats).length===5};
+    return {...req,resolvedName:wantedName,matched:true,ambiguous:false,record:r,statCount:Object.keys(r.stats).length,complete:Object.keys(r.stats).length===5};
   }
 
-  const s=await api({action:'query',list:'search',srnamespace:'0',srlimit:'10',srsearch:`"${req.name}"`});
+  const s=await api({action:'query',list:'search',srnamespace:'0',srlimit:'10',srsearch:`"${wantedName}"`});
   const titles=(s?.query?.search||[]).map(x=>x.title);
   candidates=[...candidates, ...(await fetchTitles(titles))];
-  const dedup=[...new Map(candidates.map(r=>[`${norm(r.name)}|${r.type}|${r.rarity}`,r])).values()];
-  const same = dedup.filter(r => r.type===req.type && r.rarity===Number(req.rarity) && (norm(r.name)===norm(req.name) || norm(r.name).startsWith(`${norm(req.name)} (`)));
+  const dedup=[...new Map(candidates.map(r=>[`${norm(r.name)}|${canonicalType(r.type)}|${r.rarity}`,r])).values()];
+  const same = dedup.filter(r => canonicalType(r.type)===wantedType && r.rarity===Number(req.rarity) && (norm(r.name)===norm(wantedName) || norm(r.name).startsWith(`${norm(wantedName)} (`)));
   if (same.length===1) {
     const r=same[0];
-    return {...req,matched:true,ambiguous:false,record:r,statCount:Object.keys(r.stats).length,complete:Object.keys(r.stats).length===5};
+    return {...req,resolvedName:wantedName,matched:true,ambiguous:false,record:r,statCount:Object.keys(r.stats).length,complete:Object.keys(r.stats).length===5};
   }
   if (same.length>1) {
-    const direct=same.find(r=>norm(r.name)===norm(req.name));
-    if (direct) return {...req,matched:true,ambiguous:false,record:direct,statCount:Object.keys(direct.stats).length,complete:Object.keys(direct.stats).length===5};
-    return {...req,matched:false,ambiguous:true,candidates:same.map(r=>({name:r.name,type:r.type,rarity:r.rarity,set:r.set,statCount:Object.keys(r.stats).length,url:r.url}))};
+    const direct=same.find(r=>norm(r.name)===norm(wantedName));
+    if (direct) return {...req,resolvedName:wantedName,matched:true,ambiguous:false,record:direct,statCount:Object.keys(direct.stats).length,complete:Object.keys(direct.stats).length===5};
+    return {...req,resolvedName:wantedName,matched:false,ambiguous:true,candidates:same.map(r=>({name:r.name,type:r.type,rarity:r.rarity,set:r.set,statCount:Object.keys(r.stats).length,url:r.url}))};
   }
-  return {...req,matched:false,ambiguous:false,candidates:dedup.slice(0,5).map(r=>({name:r.name,type:r.type,rarity:r.rarity,set:r.set,statCount:Object.keys(r.stats).length,url:r.url}))};
+  return {...req,resolvedName:wantedName,matched:false,ambiguous:false,candidates:dedup.slice(0,5).map(r=>({name:r.name,type:r.type,rarity:r.rarity,set:r.set,statCount:Object.keys(r.stats).length,url:r.url}))};
 }
 
 const input=JSON.parse(await fs.readFile(INPUT,'utf8'));
